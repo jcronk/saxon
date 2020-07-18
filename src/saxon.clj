@@ -31,7 +31,7 @@
   proc
   "Returns the Saxon Processor object, the thread-safe generator class for documents,
   stylesheets, & XPaths. Creates & defs the Processor if not already created."
-  (Processor. false))
+  (Processor. true))
 
 (defn upper-snake-case
   [s]
@@ -101,6 +101,36 @@
   [x]
   (.. proc (newDocumentBuilder)
       (build (xml-source x))))
+
+(defn to-params
+  [params]
+  (letfn [(conv-pair
+            [[k v]]
+            (vector (QName. ^String (name k)) (XdmAtomicValue. v)))]
+    (into {} (map conv-pair params))))
+
+(defn import-packages
+  [^XsltCompiler compiler package-list]
+  (doseq [file (map str package-list)]
+    (let [pkg-uri (URI. file)
+          package (.loadLibraryPackage compiler pkg-uri)]
+      (.importPackage compiler package))))
+
+(defn set-compiler-params
+  [compiler params]
+  (let [pconv (to-params params)]
+    (doseq [[qn av] pconv]
+      (.setParameter compiler qn av))))
+
+(defn compiler
+  [& opts]
+  (let [^XsltCompiler compiler (.newXsltCompiler proc)
+        [{package-list :package-list
+          params :params}] opts]
+    (cond-> compiler
+      package-list (import-packages package-list)
+      params (set-compiler-params params))
+    compiler))
 
 (defn compile-xslt
   "Compiles stylesheet (from anything convertible to javax.
