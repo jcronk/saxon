@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns='http://ns.saxonica.com/xslt/export' xmlns:fn='http://www.w3.org/2005/xpath-functions' xmlns:xs='http://www.w3.org/2001/XMLSchema' xmlns:vv='http://saxon.sf.net/generated-variable' xmlns:java-type='http://saxon.sf.net/java-type' when='2020-04-13T16:37:22.518-07:00' id='0' name='com.ivans.connect.utils.array' version='30' declaredModes='1' packageVersion='0.1' saxonVersion='9.9.1.7' target='EE' targetVersion='1' relocatable='true' implicit='false'>
+ <co id='0' vis='PUBLIC' binds=''>
+  <function name='Q{http://www.ivansinsurance.com/connect/array}shallow-flatten' line='19' module='array.xsl' eval='4' flags='pU' as='item()*' slots='1'>
+   <arg name='Q{}ary' as='array(*)'/>
+   <forEach role='body' ns='xsl=~ array-ext=http://www.ivansinsurance.com/connect/array array=~ fn=~ nx=http://www.ivansinsurance.com/connect xs=~ map-ext=http://www.ivansinsurance.com/connect/map map=~' line='21'>
+    <to>
+     <int val='1'/>
+     <ifCall name='Q{http://www.w3.org/2005/xpath-functions/array}size' type='xs:integer'>
+      <varRef name='Q{}ary' slot='0'/>
+     </ifCall>
+    </to>
+    <ifCall name='Q{http://www.w3.org/2005/xpath-functions/array}get' type='item()*'>
+     <varRef name='Q{}ary' slot='0'/>
+     <dot type='xs:integer'/>
+    </ifCall>
+   </forEach>
+  </function>
+ </co>
+ <co id='1' binds=''>
+  <function name='Q{http://ns.saxonica.com/anonymous-type}f_1010953501' line='0' eval='16' flags='pU' as='item()*' slots='2'>
+   <arg name='Q{}x' as='item()*'/>
+   <arg name='Q{}y' as='item()*'/>
+   <arrayBlock role='body' ns='xsl=~ array-ext=http://www.ivansinsurance.com/connect/array array=~ fn=~ nx=http://www.ivansinsurance.com/connect xs=~ map-ext=http://www.ivansinsurance.com/connect/map map=~' line='17'>
+    <varRef name='Q{}x' slot='0'/>
+    <varRef name='Q{}y' slot='1'/>
+   </arrayBlock>
+  </function>
+ </co>
+ <co id='2' vis='PUBLIC' binds='1'>
+  <function name='Q{http://www.ivansinsurance.com/connect/array}interlace' line='9' module='array.xsl' eval='4' flags='pU' as='array(*)*' slots='2'>
+   <arg name='Q{}first-item' as='item()*'/>
+   <arg name='Q{}second-item' as='item()*'/>
+   <treat role='body' ns='xsl=~ array-ext=http://www.ivansinsurance.com/connect/array array=~ fn=~ nx=http://www.ivansinsurance.com/connect xs=~ map-ext=http://www.ivansinsurance.com/connect/map map=~' line='17' as='array(*)' diag='5|0|XTTE0780|array-ext:interlace#2'>
+    <fn name='for-each-pair'>
+     <varRef name='Q{}first-item' slot='0'/>
+     <varRef name='Q{}second-item' slot='1'/>
+     <ufRef name='Q{http://ns.saxonica.com/anonymous-type}f_1010953501' arity='2' bSlot='0'/>
+    </fn>
+   </treat>
+  </function>
+ </co>
+ <co id='3' binds=''>
+  <mode onNo='TC' flags='dWe' patternSlots='0'/>
+ </co>
+ <overridden/>
+ <output>
+  <property name='{http://saxon.sf.net/}stylesheet-version' value='30'/>
+ </output>
+ <decimalFormat/>
+</package>
+<?Σ 7eac3c03?>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns='http://ns.saxonica.com/xslt/export' xmlns:fn='http://www.w3.org/2005/xpath-functions' xmlns:xs='http://www.w3.org/2001/XMLSchema' xmlns:vv='http://saxon.sf.net/generated-variable' xmlns:java-type='http://saxon.sf.net/java-type' when='2020-07-16T16:10:22.793-07:00' id='0' name='com.ivansinsurance.connect.counter' version='30' declaredModes='1' packageVersion='1' saxonVersion='9.9.1.7' target='EE' targetVersion='1' relocatable='true' implicit='false'>
+ <co id='0' vis='PUBLIC' binds='1'>
+  <function name='Q{http://www.ivansinsurance.com/connect/counters}incr' line='12' module='counter.xsl' eval='8' flags='pU' as='map(*)' slots='2'>
+   <arg name='Q{}counter' as='map(*)'/>
+   <arg name='Q{}key' as='xs:string'/>
+   <ifCall role='body' ns='xsl=~ xs=~ counter=http://www.ivansinsurance.com/connect/counters map=~' line='16' name='Q{http://www.w3.org/2005/xpath-functions/map}put' type='map(*)'>
+    <varRef name='Q{}counter' slot='0'/>
+    <varRef name='Q{}key' slot='1'/>
+    <arith line='15' op='+' calc='i+i'>
+     <ufCall name='Q{http://www.ivansinsurance.com/connect/counters}read' tailCall='false' bSlot='0' eval='6 6'>
+      <varRef name='Q{}counter' slot='0'/>
+      <varRef name='Q{}key' slot='1'/>
+     </ufCall>
+     <int val='1'/>
+    </arith>
+   </ifCall>
+  </function>
+ </co>
+ <co id='1' vis='PUBLIC' binds=''>
+  <function name='Q{http://www.ivansinsurance.com/connect/counters}read' line='19' module='counter.xsl' eval='16' flags='pU' as='xs:integer' slots='2'>
+   <arg name='Q{}counter' as='map(*)'/>
+   <arg name='Q{}key' as='xs:string?'/>
+   <check role='body' ns='xsl=~ xs=~ counter=http://www.ivansinsurance.com/connect/counters map=~' line='22' card='1' diag='5|0|XTTE0780|counter:read#2'>
+    <cast as='xs:integer' emptiable='1'>
+     <atomSing card='?' diag='2|0||cast as'>
+      <first>
+       <sequence>
+        <ifCall name='Q{http://www.w3.org/2005/xpath-functions/map}get' type='item()*'>
+         <varRef name='Q{}counter' slot='0'/>
+         <check card='1' diag='0|1||map:get'>
+          <varRef name='Q{}key' slot='1'/>
+         </check>
+        </ifCall>
+        <int val='0'/>
+       </sequence>
+      </first>
+     </atomSing>
+    </cast>
+   </check>
+  </function>
+ </co>
+ <co id='2' binds=''>
+  <mode onNo='TC' flags='dWe' patternSlots='0'/>
+ </co>
+ <overridden/>
+ <output>
+  <property name='{http://saxon.sf.net/}stylesheet-version' value='30'/>
+ </output>
+ <decimalFormat/>
+</package>
+<?Σ e243d740?>
