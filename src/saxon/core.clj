@@ -6,23 +6,15 @@
 ; counts as agreeing to be bound by the terms of this license. You must not
 ; remove this notice from this software.
 
-(ns saxon
-  "Clojure Saxon wrapper"
-  (:gen-class)
-  (:require [clojure.java.io :as io]
-            [clojure.string :as st])
+(ns saxon.core
+  (:require [clojure.string :as st])
   (:import (java.io File InputStream OutputStream Reader StringReader Writer)
-           (java.net URL URI)
-           (javax.xml.transform Source ErrorListener TransformerException)
+           (java.net URL)
+           (javax.xml.transform Source)
            (javax.xml.transform.stream StreamSource)
            (net.sf.saxon.lib FeatureKeys Feature)
-           (net.sf.saxon.om NodeInfo)
-           (net.sf.saxon.s9api XsltCompiler Axis Destination Processor Serializer
-                               Serializer$Property XPathCompiler XPathSelector
-                               XdmDestination XdmValue XdmItem XdmNode XdmNodeKind
-                               XdmAtomicValue XdmMap XQueryCompiler XQueryEvaluator QName)
+           (net.sf.saxon.s9api Destination Processor Serializer Serializer$Property XPathCompiler XdmValue XdmItem XdmNode XdmNodeKind XdmAtomicValue XdmMap XQueryCompiler QName)
            (net.sf.saxon.tree.util Navigator)))
-
 ;;
 ;; Utilities
 ;;
@@ -36,6 +28,13 @@
 (defn upper-snake-case
   [s]
   (-> s name st/upper-case (st/replace "-" "_")))
+
+(defn to-params
+  [params]
+  (letfn [(conv-pair
+            [[k v]]
+            (vector (QName. ^String (name k)) (XdmAtomicValue. v)))]
+    (into {} (map conv-pair params))))
 
 (defn qname
   ([^String nm] (QName. nm))
@@ -79,7 +78,7 @@
   [^XdmItem val]
   (.isAtomicValue val))
 
-(defn- unwrap-xdm-items
+(defn unwrap-xdm-items
   "Makes XdmItems Clojure-friendly. A Saxon XdmItem is either an atomic value
   (number, string, URI) or a node.
 
@@ -107,76 +106,11 @@
   (.. proc (newDocumentBuilder)
       (build (xml-source x))))
 
-(defn to-params
-  [params]
-  (letfn [(conv-pair
-            [[k v]]
-            (vector (QName. ^String (name k)) (XdmAtomicValue. v)))]
-    (into {} (map conv-pair params))))
-
 (defn as-xpath-map
   [mp]
   (letfn [(reducer [r [k v]]
             (assoc r (-> k name XdmAtomicValue.) (XdmAtomicValue. v)))]
     (XdmMap. ^java.util.Map (reduce-kv reducer {} mp))))
-
-(defn import-packages
-  [^XsltCompiler compiler package-list]
-  (doseq [file (map str package-list)]
-    (let [pkg-uri (URI. file)
-          package (.loadLibraryPackage compiler pkg-uri)]
-      (.importPackage compiler package))))
-
-(defn set-compiler-params
-  [compiler params]
-  (let [pconv (to-params params)]
-    (doseq [[qn av] pconv]
-      (.setParameter compiler qn av))))
-
-(defn compiler
-  [& opts]
-  (let [^XsltCompiler compiler (.newXsltCompiler proc)
-        [{package-list :package-list
-          params :params}] opts]
-    (cond-> compiler
-      package-list (import-packages package-list)
-      params (set-compiler-params params))
-    compiler))
-
-(defn compile-stylesheet
-  [compiler ss]
-  (.compile compiler ss))
-
-(defn apply-templates
-  [xform input]
-  (->> input
-       compile-xml
-       (.applyTemplates xform)
-       unwrap-xdm-items))
-
-(defn compile-xslt
-  "Compiles stylesheet (from anything convertible to javax.
-  xml.transform.Source), returns function that applies it to
-  compiled doc or node."
-  [f]
-  (let [cmplr (.newXsltCompiler proc)
-        exe (.compile cmplr (xml-source f))]
-
-    (fn [^XdmNode xml & params]
-      (let [xdm-dest (XdmDestination.)
-            transformer (.load exe)] ; created anew, is thread-safe
-        (when params
-          (let [prms (first params)
-                ks (keys prms)]
-            (doseq [k ks]
-              (.setParameter transformer
-                             (QName. ^String (name k))
-                             (XdmAtomicValue. (k prms))))))
-        (doto transformer
-          (.setInitialContextNode xml)
-          (.setDestination xdm-dest)
-          (.transform))
-        (.getXdmNode xdm-dest)))))
 
 (defn compile-xpath
   "Compiles XPath expression (given as string), returns
@@ -254,7 +188,7 @@
     (let [prop (Serializer$Property/valueOf (upper-snake-case prop))]
       (.setOutputProperty s prop value))))
 
-(defmulti serialize (fn [node dest & props] (class dest)))
+(defmulti serialize (fn [_node dest & _props] (class dest)))
 (defmethod serialize File
   [node ^File dest & props]
   (let [s (.newSerializer proc)]
