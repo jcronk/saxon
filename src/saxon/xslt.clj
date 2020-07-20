@@ -61,9 +61,10 @@
   "Set properties on the compiled and loaded XsltTransfomer30 object
     msg-listener, err-listener, and uri-resolver: MessageListener, ErrorListener,
       and URIResolvers, if not using the defaults
-    ssheet-params: Global stylesheet params as a map (currently this will only work with string values)
-    init-template-params: Parameters to be passed into the initial template (as a map); this includes an optional boolean
-      :tunnel param"
+    ssheet-params: Global stylesheet params as a map (currently this will only
+      work with string values)
+    init-template-params: Parameters to be passed into the initial template (as
+      a map); this includes an optional boolean :tunnel param"
   [xfrmr props]
   (let [{msg-listener :msg-listener
          err-listener :err-listener
