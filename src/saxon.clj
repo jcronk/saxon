@@ -143,6 +143,17 @@
       params (set-compiler-params params))
     compiler))
 
+(defn compile-stylesheet
+  [compiler ss]
+  (.compile compiler ss))
+
+(defn apply-templates
+  [xform input]
+  (->> input
+       compile-xml
+       (.applyTemplates xform)
+       unwrap-xdm-items))
+
 (defn compile-xslt
   "Compiles stylesheet (from anything convertible to javax.
   xml.transform.Source), returns function that applies it to
