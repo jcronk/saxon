@@ -4,5 +4,5 @@
                  [net.sf.saxon/SaxonEE "9.9.1.7"]]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}}
-  :repl-options {:init-ns saxon.core}
-  :resource-paths ["resources/saxon-license.lic" "test/resources"])
+  :repl-options {:init-ns saxon.xslt}
+  :resource-paths ["resources" "test/resources"])

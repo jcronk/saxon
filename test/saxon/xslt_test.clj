@@ -41,7 +41,7 @@
       (is (instance? XsltExecutable (.compile c ssrc)) "It creates an executable")))
 
   (testing "Load packages"
-    (let [pkg-list (mapv io/resource ["counter.sef" "array.sef"])
+    (let [pkg-list (mapv io/resource ["counter.sef"])
           compiler (xsl/compiler {:package-list pkg-list})]
       (is (instance? XsltCompiler compiler))
       (let [ss (io/resource "test-counter.xsl")
