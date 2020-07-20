@@ -20,7 +20,7 @@
            (net.sf.saxon.s9api XsltCompiler Axis Destination Processor Serializer
                                Serializer$Property XPathCompiler XPathSelector
                                XdmDestination XdmValue XdmItem XdmNode XdmNodeKind
-                               XdmAtomicValue XQueryCompiler XQueryEvaluator QName)
+                               XdmAtomicValue XdmMap XQueryCompiler XQueryEvaluator QName)
            (net.sf.saxon.tree.util Navigator)))
 
 ;;
@@ -36,6 +36,11 @@
 (defn upper-snake-case
   [s]
   (-> s name st/upper-case (st/replace "-" "_")))
+
+(defn qname
+  ([^String nm] (QName. nm))
+  ([^String uri ^String nm] (QName. uri nm))
+  ([^String pfx ^String uri ^String nm] (QName. pfx uri nm)))
 
 (defn set-config-property!
   "Sets a configuration property on the Saxon Processor object. Takes keyword
@@ -108,6 +113,12 @@
             [[k v]]
             (vector (QName. ^String (name k)) (XdmAtomicValue. v)))]
     (into {} (map conv-pair params))))
+
+(defn as-xpath-map
+  [mp]
+  (letfn [(reducer [r [k v]]
+            (assoc r (-> k name XdmAtomicValue.) (XdmAtomicValue. v)))]
+    (XdmMap. ^java.util.Map (reduce-kv reducer {} mp))))
 
 (defn import-packages
   [^XsltCompiler compiler package-list]
