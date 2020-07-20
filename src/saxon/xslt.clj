@@ -86,11 +86,14 @@
   (.load30 (.compile compiler (xml-source ss))))
 
 (defn apply-templates
-  [xform input]
-  (->> input
-       compile-xml
-       (.applyTemplates xform)
-       unwrap-xdm-items))
+  ([xform input]
+   (->> input
+        compile-xml
+        (.applyTemplates xform)
+        unwrap-xdm-items))
+  ([xform input output]
+   (let [result (apply-templates xform input)]
+     (spit output result))))
 
 (defn call-template
   "Call a named template.  tmpl-name must be the output of the qname function"
