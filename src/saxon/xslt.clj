@@ -47,7 +47,7 @@
   [params]
   (let [{tunnel :tunnel} params
         tparams (dissoc params :tunnel)]
-    {:tunnel tunnel
+    {:tunnel (true? tunnel)
      :tparams (to-params params)}))
 
 (defn- set-init-template-params
