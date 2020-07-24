@@ -17,13 +17,13 @@
            (net.sf.saxon.tree.util Navigator)))
 
 ; XsltCompiler manipulation functions
-(defn- set-compiler-params
-  [compiler params]
+(defn set-compiler-params
+  [^XsltCompiler compiler params]
   (let [pconv (to-params params)]
     (doseq [[qn av] pconv]
       (.setParameter compiler qn av))))
 
-(defn- import-packages
+(defn import-packages
   [^XsltCompiler compiler package-list]
   (doseq [file (map str package-list)]
     (let [pkg-uri (URI. file)
@@ -100,26 +100,4 @@
   [xform tmpl-name]
   (unwrap-xdm-items (.callTemplate xform tmpl-name)))
 
-(defn compile-ss
-  "Compiles stylesheet (from anything convertible to javax.
-  xml.transform.Source), returns function that applies it to
-  compiled doc or node."
-  [f]
-  (let [cmplr (.newXsltCompiler proc)
-        exe (.compile cmplr (xml-source f))]
 
-    (fn [^XdmNode xml & params]
-      (let [xdm-dest (XdmDestination.)
-            transformer (.load exe)] ; created anew, is thread-safe
-        (when params
-          (let [prms (first params)
-                ks (keys prms)]
-            (doseq [k ks]
-              (.setParameter transformer
-                             (QName. ^String (name k))
-                             (XdmAtomicValue. (k prms))))))
-        (doto transformer
-          (.setInitialContextNode xml)
-          (.setDestination xdm-dest)
-          (.transform))
-        (.getXdmNode xdm-dest)))))

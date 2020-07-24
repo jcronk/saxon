@@ -9,7 +9,8 @@
 (ns saxon.core
   (:require [clojure.string :as st])
   (:import (java.io File InputStream OutputStream Reader StringReader Writer)
-           (java.net URL)
+           (java.net URL URI)
+           (java.util Map)
            (javax.xml.transform Source)
            (javax.xml.transform.stream StreamSource)
            (net.sf.saxon.lib FeatureKeys Feature)
@@ -29,13 +30,6 @@
   [s]
   (-> s name st/upper-case (st/replace "-" "_")))
 
-(defn to-params
-  [params]
-  (letfn [(conv-pair
-            [[k v]]
-            (vector (QName. ^String (name k)) (XdmAtomicValue. v)))]
-    (into {} (map conv-pair params))))
-
 (defn qname
   ([^String nm] (QName. nm))
   ([^String uri ^String nm] (QName. uri nm))
@@ -50,6 +44,57 @@
   (let [prop (upper-snake-case prop)
         ^Feature field (.get (.getField FeatureKeys prop) nil)]
     (.setConfigurationProperty proc field value)))
+
+(defprotocol Coercions
+  "Coerce between 'resource-namish' things"
+  (^javax.xml.transform.Source as-source [x] "Coerce argument to a StreamSource")
+  (^net.sf.saxon.s9api.XdmValue as-xdmval [x] "Coerce argument to an XdmValue"))
+
+(extend-protocol Coercions
+  nil
+  (as-source [_] nil)
+  (as-xdmval [_] nil)
+
+  String
+  (as-source [s] (StreamSource. (StringReader. s)))
+  (as-xdmval [s] (XdmAtomicValue. s))
+
+  File
+  (as-source [f] (StreamSource. f))
+  (as-xdmval [f] (XdmAtomicValue. (.toString f)))
+
+  Boolean
+  (as-xdmval [b] (XdmAtomicValue. b))
+
+  InputStream
+  (as-source [i] (StreamSource. i))
+
+  URL
+  (as-source [u] (StreamSource. (.openStream u)))
+
+  URI
+  (as-source [u] (StreamSource. (.openStream (.toURL u))))
+
+  Reader
+  (as-source [r] (StreamSource. r))
+
+  Source
+  (as-source [s] s)
+
+  XdmValue
+  (as-xdmval [x] x)
+
+  Map
+  (as-xdmval [m] (letfn [(reducer [r k v]
+                           (assoc r (-> k name as-xdmval) (as-xdmval v)))]
+                   (XdmMap. ^java.util.Map (reduce-kv reducer {} m)))))
+
+(defn to-params
+  [params]
+  (letfn [(conv-pair
+            [[k v]]
+            (vector (QName. ^String (name k)) (as-xdmval v)))]
+    (into {} (map conv-pair params))))
 
 (defmulti ^Source xml-source class)
 (defmethod xml-source File

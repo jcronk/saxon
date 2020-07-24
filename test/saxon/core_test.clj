@@ -4,8 +4,10 @@
             [clojure.test :refer :all]
             [saxon.core :as s])
   (:import (java.io StringReader ByteArrayInputStream)
+           (java.net URL URI)
            (javax.xml.transform Source ErrorListener TransformerException SourceLocator)
-           (net.sf.saxon.s9api XdmNode XsltCompiler MessageListener XsltExecutable SaxonApiException)))
+           (javax.xml.transform.stream StreamSource)
+           (net.sf.saxon.s9api XdmNode XdmAtomicValue XdmValue XsltCompiler MessageListener XsltExecutable SaxonApiException)))
 
 (def xml "<root><a><b/></a></root>")
 (deftest test-compile-xml
@@ -22,3 +24,17 @@
          (->> (s/compile-xml xml)
               (s/query "(//element())[3]")
               s/node-path))))
+
+(deftest test-coercions
+  (are [it] (instance? Source (s/as-source it))
+       (io/file "a-file")
+       "an input string"
+       (URL. "file:///dev/null")
+       (URI. "file:///dev/null")
+       (StringReader. "an input string")
+       (StreamSource. (io/file "a-file")))
+  (are [it] (instance? XdmValue (s/as-xdmval it))
+       "a string"
+       (io/file "a-file")
+       (XdmAtomicValue. "a string")
+       {:key "value" :key2 "value"}))
