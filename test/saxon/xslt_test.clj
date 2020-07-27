@@ -6,7 +6,7 @@
             [saxon.xslt :as xsl])
   (:import (java.io StringReader ByteArrayInputStream)
            (javax.xml.transform Source ErrorListener TransformerException SourceLocator)
-           (net.sf.saxon.s9api XdmNode XsltCompiler MessageListener XsltExecutable SaxonApiException)))
+           (net.sf.saxon.s9api XdmNode XdmDestination XsltCompiler MessageListener XsltExecutable SaxonApiException)))
 
 (def sample-error-listener
   (binding [*out* *err*]
@@ -90,3 +90,26 @@
             xfrm (xsl/transformer compiler ss)]
         (xsl/set-transformer-properties! xfrm params)
         (is (st/includes? (.callTemplate xfrm (s/qname "main")) "changed"))))))
+
+(deftest test-stylesheet-chaining
+  (let [compiler (xsl/compiler)
+        ss-list (->> ["A.xsl" "B.xsl" "C.xsl" "D.xsl"] (map #(io/resource %)) (map #(xsl/transformer compiler %)))
+        inp (s/as-source (io/resource "xml-input.xml"))
+        dest (XdmDestination.)
+        chain (xsl/chain ss-list dest)]
+    (.applyTemplates (first ss-list) inp chain)
+    (is (st/includes? (.toString (.getXdmNode dest)) "That was a successful test! Hooray!") "All four transformations were applied")))
+
+(deftest test-stylesheet-chaining-with-results
+  (let [compiler (xsl/compiler)
+        ss-list (->> ["A.xsl" "B.xsl" "C.xsl" "D.xsl"] (map #(io/resource %)) (map #(xsl/transformer compiler %)))
+        inp (s/as-source (io/resource "xml-input.xml"))
+        dest (XdmDestination.)
+        {initial :initial-dest
+         results :results} (xsl/chain-with-results ss-list dest)]
+    (.applyTemplates (first ss-list) inp initial)
+    (is (st/includes? (.toString (.getXdmNode dest)) "That was a successful test! Hooray!") "All four transformations were applied")
+    (let [[a b c] (map #(.toString (.getXdmNode %)) results)]
+      (is (st/includes? a "That is"))
+      (is (st/includes? b "That was"))
+      (is (st/includes? c "successful")))))

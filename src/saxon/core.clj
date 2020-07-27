@@ -26,11 +26,14 @@
   stylesheets, & XPaths. Creates & defs the Processor if not already created."
   (Processor. true))
 
-(defn upper-snake-case
+(defn- upper-snake-case
+  "Extracted function for converting kebab case to SCREAMING_SNAKE_CASE"
   [s]
   (-> s name st/upper-case (st/replace "-" "_")))
 
 (defn qname
+  "Easily create a QName - you can pass in just the name, the name + ns-uri, or
+  the name + ns-uri + ns-prefix"
   ([^String nm] (QName. nm))
   ([^String uri ^String nm] (QName. uri nm))
   ([^String pfx ^String uri ^String nm] (QName. pfx uri nm)))
@@ -90,6 +93,7 @@
                    (XdmMap. ^java.util.Map (reduce-kv reducer {} m)))))
 
 (defn to-params
+  "Convert a map of parameters into the QName/XdmValue map that Saxon is expecting"
   [params]
   (letfn [(conv-pair
             [[k v]]
