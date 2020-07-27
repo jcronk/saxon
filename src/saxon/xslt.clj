@@ -17,13 +17,13 @@
            (net.sf.saxon.tree.util Navigator)))
 
 ; XsltCompiler manipulation functions
-(defn set-compiler-params
+(defn set-compiler-params!
   [^XsltCompiler compiler params]
   (let [pconv (to-params params)]
     (doseq [[qn av] pconv]
       (.setParameter compiler qn av))))
 
-(defn import-packages
+(defn import-packages!
   [^XsltCompiler compiler package-list]
   (doseq [file (map str package-list)]
     (let [pkg-uri (URI. file)
@@ -39,8 +39,8 @@
         [{package-list :package-list
           params :params}] opts]
     (cond-> compiler
-      package-list (import-packages package-list)
-      params (set-compiler-params params))
+      package-list (import-packages! package-list)
+      params (set-compiler-params! params))
     compiler))
 
 (defn- convert-template-params
@@ -50,7 +50,7 @@
     {:tunnel (true? tunnel)
      :tparams (to-params params)}))
 
-(defn- set-init-template-params
+(defn set-init-template-params!
   [xfrmr params]
   (let [{params :tparams
          tunnel :tunnel}
