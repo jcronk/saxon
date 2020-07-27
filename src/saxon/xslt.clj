@@ -12,7 +12,7 @@
            (net.sf.saxon.om NodeInfo)
            (net.sf.saxon.s9api XsltCompiler XsltTransformer Axis Destination Processor Serializer
                                Serializer$Property XPathCompiler MessageListener XPathSelector
-                               XdmDestination XdmValue XdmItem XdmNode XdmNodeKind
+                               XdmDestination XdmValue XdmItem XdmNode XdmNodeKind TeeDestination
                                XdmAtomicValue XdmMap XQueryCompiler XQueryEvaluator QName)
            (net.sf.saxon.tree.util Navigator)))
 
@@ -78,12 +78,14 @@
       err-listener (.setErrorListener err-listener)
       uri-resolver (.setURIResolver uri-resolver)
       ssheet-params (.setStylesheetParameters (to-params ssheet-params))
-      init-tmpl-params (set-init-template-params init-tmpl-params)) xfrmr))
+      init-tmpl-params (set-init-template-params! init-tmpl-params)) xfrmr))
 
 (defn transformer
   "Compile and load a stylesheet, returning an Xslt30Transformer"
-  [compiler ss]
-  (.load30 (.compile compiler (xml-source ss))))
+  ([ss]
+   (transformer (compiler) ss))
+  ([compiler ss]
+   (.load30 (.compile compiler (as-source ss)))))
 
 (defn apply-templates
   ([xform input]
@@ -100,4 +102,52 @@
   [xform tmpl-name]
   (unwrap-xdm-items (.callTemplate xform tmpl-name)))
 
+(defn chain
+  "Combine a collection of XsltTransformer objects into a destination.
 
+  This is for scenarios where there is a series of stylesheets, and the output of
+  the first stylesheet needs to go into the output of the second stylesheet, whose
+  output needs to go into the third stylesheet, etc., until you have the final output.
+
+  Pass in the full set of stylesheets as compiled and loaded transformers, and create
+  a Destination object that will hold the final output.  This function creates the
+  Destination to be passed to the first transformer.  Example:
+
+  (let [col (map transformer ss-file-list)
+        dest (XdmDestination.)
+        chained (chain col dest)]
+    (.applyTemplates (first col) input-file chained)
+    (.getXdmNode dest))
+"
+  [ss-coll dest]
+  (let [[head & tail] ss-coll]
+    (reduce #(.asDocumentDestination %2 %1) dest (reverse tail))))
+
+(defn- tee-destination
+  [ss dest1 dest2]
+  (.asDocumentDestination ss (TeeDestination. dest1 dest2)))
+
+(defn chain-with-results
+  "As chain, but returns a map containing the various Destination objects that are needed to
+  get the intermediate results.
+
+    :first-dest
+    :results
+
+  (let [col (map transformer ss-file-list)
+        dest (XdmDestination.)
+        { initial-dest :initial-dest
+          results :results } (chain-with-results col dest)]
+    (.applyTemplates (first col) input-file initial-dest)
+    (.getXdmNode dest) ; final result
+    (map #(.getXdmNode) results)) ; seq of intermediate results, in order
+"
+  [ss-coll dest]
+  (let [dests (take (-> ss-coll count dec) (repeatedly #(XdmDestination.)))
+        paired (map vector (butlast ss-coll) dests)
+        [xfm-first dest-first] (first paired)
+        to-reduce (rest paired)
+        final-dest (.asDocumentDestination (last ss-coll) dest)
+        reduction (reduce #(tee-destination (first %2) (last %2) %1) final-dest to-reduce)]
+    {:initial-dest (TeeDestination. dest-first reduction)
+     :results dests}))
