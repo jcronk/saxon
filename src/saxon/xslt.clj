@@ -93,14 +93,19 @@
         compile-xml
         (.applyTemplates xform)
         unwrap-xdm-items))
-  ([xform input output]
-   (let [result (apply-templates xform input)]
-     (spit output result))))
+  ([xform input dest]
+   (->> input
+        as-source
+        (.applyTemplates xform dest))
+   (unwrap-xdm-items (.getXdmNode dest))))
 
 (defn call-template
   "Call a named template.  tmpl-name must be the output of the qname function"
-  [xform tmpl-name]
-  (unwrap-xdm-items (.callTemplate xform tmpl-name)))
+  ([xform tmpl-name]
+   (unwrap-xdm-items (.callTemplate xform tmpl-name)))
+  ([xform tmpl-name dest]
+   (.callTemplate xform tmpl-name dest)
+   (unwrap-xdm-items (.getXdmNode dest))))
 
 (defn chain
   "Combine a collection of XsltTransformer objects into a destination.
