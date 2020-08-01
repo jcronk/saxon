@@ -3,7 +3,14 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="#all" version="3.0">
     <xsl:mode on-no-match="shallow-copy"/>
+    <xsl:template name="main" expand-text="yes">
+        <xsl:param name="test"/>
+        <Root>
+            <Test>{$test} that it is a test</Test>
+        </Root>
+    </xsl:template>
     <xsl:template match="Test" expand-text="yes">
-        <xsl:copy>{replace(., 'This', 'That')}</xsl:copy>
+        <xsl:param name="test"/>
+        <xsl:copy>{$test || ' ' || replace(., 'This', 'That')}</xsl:copy>
     </xsl:template>
 </xsl:stylesheet>

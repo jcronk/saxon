@@ -64,7 +64,7 @@
 
   File
   (as-source [f] (StreamSource. f))
-  (as-xdmval [f] (XdmAtomicValue. (.toString f)))
+  (as-xdmval [f] (XdmAtomicValue. (str f)))
 
   Boolean
   (as-xdmval [b] (XdmAtomicValue. b))

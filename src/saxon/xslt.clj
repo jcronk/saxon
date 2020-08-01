@@ -143,7 +143,7 @@
     (map #(.getXdmNode) results)) ; seq of intermediate results, in order
 "
   [ss-coll dest]
-  (let [dests (take (-> ss-coll count dec) (repeatedly #(XdmDestination.)))
+  (let [dests (repeatedly (-> ss-coll count dec) #(XdmDestination.))
         paired (map vector (butlast ss-coll) dests)
         [xfm-first dest-first] (first paired)
         to-reduce (rest paired)

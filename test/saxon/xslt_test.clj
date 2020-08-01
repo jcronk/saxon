@@ -93,12 +93,19 @@
 
 (deftest test-stylesheet-chaining
   (let [compiler (xsl/compiler)
-        ss-list (->> ["A.xsl" "B.xsl" "C.xsl" "D.xsl"] (map #(io/resource %)) (map #(xsl/transformer compiler %)))
+        ss-list (->> ["A.xsl" "B.xsl" "C.xsl" "D.xsl" "E.xsl"] (map #(io/resource %)) (map #(xsl/transformer compiler %)))
         inp (s/as-source (io/resource "xml-input.xml"))
         dest (XdmDestination.)
         chain (xsl/chain ss-list dest)]
-    (.applyTemplates (first ss-list) inp chain)
-    (is (st/includes? (.toString (.getXdmNode dest)) "That was a successful test! Hooray!") "All four transformations were applied")))
+    (testing "invocation by apply-templates"
+      (.applyTemplates (first ss-list) inp chain)
+      (is (= (.toString (.getXdmNode dest)) "That was a successful test! Hooray!") "All five transformations were applied"))
+    (testing "invocation by call-template"
+      (let [ss (first ss-list)
+            params {:init-template-params {:test "I know"}}]
+        (xsl/set-transformer-properties! ss params)
+        (.callTemplate ss (s/qname "main") chain)
+        (is (= (.toString (.getXdmNode dest)) "I know that it was a successful test! Hooray!") "It called the template, used the param, then applied the remaining four stylesheets")))))
 
 (deftest test-stylesheet-chaining-with-results
   (let [compiler (xsl/compiler)
