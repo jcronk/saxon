@@ -3,17 +3,29 @@
             [clojure.string :as st]
             [clojure.test :refer :all]
             [saxon.core :as s])
-  (:import (java.io StringReader ByteArrayInputStream)
-           (java.net URL URI)
-           (javax.xml.transform Source ErrorListener TransformerException SourceLocator)
+  (:import (java.io StringReader
+                    ByteArrayInputStream)
+           (java.net URL
+                     URI)
+           (javax.xml.transform Source
+                                ErrorListener
+                                TransformerException
+                                SourceLocator)
            (javax.xml.transform.stream StreamSource)
-           (net.sf.saxon.s9api XdmNode XdmAtomicValue XdmValue XsltCompiler MessageListener XsltExecutable SaxonApiException)))
+           (net.sf.saxon.s9api XdmNode
+                               XdmAtomicValue
+                               XdmValue
+                               XsltCompiler
+                               MessageListener
+                               XsltExecutable
+                               SaxonApiException)))
 
 (def xml "<root><a><b/></a></root>")
 (deftest test-compile-xml
   (is (instance? XdmNode (s/compile-xml xml)))
   (is (instance? XdmNode (s/compile-xml (java.io.StringReader. xml))))
-  (is (instance? XdmNode (s/compile-xml (java.io.ByteArrayInputStream. (.getBytes xml "UTF-8")))))
+  (is (instance? XdmNode (s/compile-xml (java.io.ByteArrayInputStream.
+                                          (.getBytes xml "UTF-8")))))
   (is (thrown? SaxonApiException (s/compile-xml (format "%s bad stuff" xml)))))
 
 (deftest test-query

@@ -8,13 +8,32 @@
 
 (ns saxon.core
   (:require [clojure.string :as st])
-  (:import (java.io File InputStream OutputStream Reader StringReader Writer)
-           (java.net URL URI)
+  (:import (java.io File
+                    InputStream
+                    OutputStream
+                    Reader
+                    StringReader
+                    Writer)
+           (java.net URL
+                     URI)
            (java.util Map)
            (javax.xml.transform Source)
            (javax.xml.transform.stream StreamSource)
-           (net.sf.saxon.lib FeatureKeys Feature)
-           (net.sf.saxon.s9api Destination Processor Serializer Serializer$Property XPathCompiler XdmValue XdmItem XdmNode XdmNodeKind XdmAtomicValue XdmMap XQueryCompiler QName)
+           (net.sf.saxon.lib FeatureKeys
+                             Feature)
+           (net.sf.saxon.s9api Destination
+                               Processor
+                               Serializer
+                               Serializer$Property
+                               XPathCompiler
+                               XdmValue
+                               XdmItem
+                               XdmNode
+                               XdmNodeKind
+                               XdmAtomicValue
+                               XdmMap
+                               XQueryCompiler
+                               QName)
            (net.sf.saxon.tree.util Navigator)))
 ;;
 ;; Utilities
@@ -48,12 +67,12 @@
         ^Feature field (.get (.getField FeatureKeys prop) nil)]
     (.setConfigurationProperty proc field value)))
 
-(defprotocol Coercions
+(defprotocol Sourceable
   "Coerce between 'resource-namish' things"
   (^javax.xml.transform.Source as-source [x] "Coerce argument to a StreamSource")
   (^net.sf.saxon.s9api.XdmValue as-xdmval [x] "Coerce argument to an XdmValue"))
 
-(extend-protocol Coercions
+(extend-protocol Sourceable
   nil
   (as-source [_] nil)
   (as-xdmval [_] nil)
@@ -124,8 +143,8 @@
 
 (defn atomic?
   "Returns true if XdmItem or a subclass (XdmAtomicValue, XdmNode) is an atomic value."
-  [^XdmItem val]
-  (.isAtomicValue val))
+  [^XdmItem item]
+  (.isAtomicValue item))
 
 (defn unwrap-xdm-items
   "Makes XdmItems Clojure-friendly. A Saxon XdmItem is either an atomic value
@@ -161,13 +180,13 @@
             (assoc r (-> k name XdmAtomicValue.) (XdmAtomicValue. v)))]
     (XdmMap. ^java.util.Map (reduce-kv reducer {} mp))))
 
-(defn compile-xpath
+(defn compile-xpath*
   "Compiles XPath expression (given as string), returns
   function that applies it to compiled doc or node. Takes
   optional map of prefixes (as keywords) and namespace URIs."
-  [^String xpath & ns-map]
+  [^String xpath & nsm]
   (let [cmplr (doto (.newXPathCompiler proc)
-                (#(doseq [[pre uri] (first ns-map)]
+                (#(doseq [[pre uri] (first nsm)]
                     (.declareNamespace ^XPathCompiler % (name pre) uri))))
         exe (.compile cmplr xpath)]
 
@@ -176,13 +195,13 @@
         (doto (.load exe)
           (.setContextItem xml))))))
 
-(defn compile-xquery
+(defn compile-xquery*
   "Compiles XQuery expression (given as string), returns
   function that applies it to compiled doc or node. Takes
   optional map of prefixes (as keywords) and namespace URIs."
-  [^String xquery & ns-map]
+  [^String xquery & nsm]
   (let [cmplr (doto (.newXQueryCompiler proc)
-                (#(doseq [[pre uri] (first ns-map)]
+                (#(doseq [[pre uri] (first nsm)]
                     (.declareNamespace ^XQueryCompiler % (name pre) uri))))
         exe (.compile cmplr xquery)]
 
@@ -193,27 +212,8 @@
         (doto (.load exe)
           (.setContextItem xml))))))
 
-;; memoize compile-query funcs, create top-level query func
-
-;; redef, decorate-with are copyright (c) James Reeves. All rights reserved.
-;; Taken from compojure.control; Compojure: http://github.com/weavejester/compojure
-; (defmacro redef
-;   "Redefine an existing value, keeping the metadata intact."
-;   {:private true}
-;   [name value]
-;   `(let ['m (meta '~name)
-;          'v (def ~name ~value)]
-;      (alter-meta! 'v merge 'm)
-;      'v))
-
-; (defmacro decorate-with
-;   "Wrap multiple functions in a decorator."
-;   {:private true}
-;   [decorator & funcs]
-;   `(do ~@(for ['f funcs]
-;            `(redef '~f (~decorator '~f)))))
-
-; (decorate-with memoize compile-xpath compile-xquery)
+(def compile-xpath (memoize compile-xpath*))
+(def compile-xquery (memoize compile-xquery*))
 
 (defn query
   "Run query on node. Arity of two accepts (1) string or compiled query fn & (2) node;
@@ -221,9 +221,9 @@
   ([q nd] ((if (fn? q) q (compile-xquery q)) nd))
   ([q nses nd] ((compile-xquery q nses) nd)))
 
-; (definline with-default-ns
-;   "Returns XQuery string with nmspce declared as default element namespace."
-;   [nmspce q] `(format "declare default element namespace '%s'; %s" ~nmspce ~q))
+(definline with-default-ns
+  "Returns XQuery string with nmspce declared as default element namespace."
+  [nmspce q] `(format "declare default element namespace '%s'; %s" ~nmspce ~q))
 
 ;; Serializing
 
