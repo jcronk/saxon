@@ -27,6 +27,5 @@
                              ["vcs" "push"]]}
   :profiles {:uberjar {:aot :all}}
   :repl-options {:init-ns saxon.xslt}
-  :bikeshed {:max-line-length 100}
   :resource-paths ["resources" "test/resources"]
   :test-refresh {:notify-command ["terminal-notifier" "-title" "clojure-saxon test results" "-appIcon" "file:///Users/jcronk/Pictures/Clojure.png" "-message"]})
