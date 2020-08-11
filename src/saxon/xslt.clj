@@ -22,6 +22,11 @@
     (doseq [[qn av] pconv]
       (.setParameter compiler qn av))))
 
+(defn clear-compiler-params!
+  "Clear any previously set params"
+  [^XsltCompiler compiler]
+  (.clearParameters compiler))
+
 (defn compile-package
   "Compile an XSLT package into an in-memory representation"
   [compiler pkg-src]
