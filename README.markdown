@@ -21,7 +21,7 @@ The library has been tested against Clojure 1.3, 1.4, & 1.6.
 Use
 ---
 
-###Query
+### Query
 
 The top-level function is `query`; it takes an XQuery or XPath expression, an 
 optional namespace map, and a node. Here's returning a sequence of the names of 
@@ -52,7 +52,7 @@ but `query` accepts a compiled function (the result of `compile-xquery` or `comp
 below) as its first argument as well. (The *results* of the query are not cached.)
 
 
-###Compile-xquery, Compile-xpath 
+### Compile-xquery, Compile-xpath 
 
 `compile-xquery` and `compile-xpath` are the lower-level functions behind `query`.
 They take expressions and an optional namespace map, and return a function that applies
@@ -65,7 +65,7 @@ the compiled expression to a node.
 
 `compile-xquery` and `compile-xpath` cache their query arguments as well. 
 
-###Compiling XML
+### Compiling XML
 
 Use `compile-xml` to produce the Saxon in-memory representation, an "XdmNode." 
 
@@ -78,13 +78,13 @@ Use `compile-xml` to produce the Saxon in-memory representation, an "XdmNode."
     #<XdmNode <root/>>
 
 
-###XSLT
+### XSLT
 
 `compile-xslt` takes the same arguments as `compile-xml` and returns a function 
 that applies the compiled stylesheet to a node, with an optional map of parameters.
 
 
-###Singletons
+### Singletons
 
 When the result of a query is a single item, the query functions return a singleton
 instead of a sequence of one item, e.g.
@@ -96,7 +96,7 @@ I find this inconsistency convenient, but it might be a bad design choice. User 
 appreciated.   
 
 
-###Laziness
+### Laziness
 
 Traversal of nodes is somewhat lazy, though not strictly so. The Clojure code
 realizes the first two items of the return sequence, and the Saxon Java processor 
@@ -131,7 +131,7 @@ from when the third item is touched onward, realizing an item also realizes the
 *next* item in the background.
 
   
-###Helper Functions
+### Helper Functions
 
 `node-path` returns an absolute XPath to a node:
 
