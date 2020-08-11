@@ -3,7 +3,7 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [clojure.string :as st]
-            [saxon.core :refer :all])
+            [saxon.core :as sx])
   (:import (java.io File InputStream OutputStream Reader StringReader Writer)
            (java.net URL URI)
            (javax.xml.transform Source ErrorListener TransformerException)
@@ -19,7 +19,7 @@
 ; XsltCompiler manipulation functions
 (defn set-compiler-params!
   [^XsltCompiler compiler params]
-  (let [pconv (to-params params)]
+  (let [pconv (sx/to-params params)]
     (doseq [[qn av] pconv]
       (.setParameter compiler qn av))))
 
@@ -35,7 +35,7 @@
     package-list: list of compiled packages to import, by filename or URL
     params: map of static parameters to set"
   [& opts]
-  (let [^XsltCompiler compiler (.newXsltCompiler proc)
+  (let [^XsltCompiler compiler (.newXsltCompiler sx/proc)
         [{package-list :package-list
           params :params}] opts]
     (cond-> compiler
@@ -48,7 +48,7 @@
   (let [{tunnel :tunnel} params
         tparams (dissoc params :tunnel)]
     {:tunnel (true? tunnel)
-     :tparams (to-params params)}))
+     :tparams (sx/to-params params)}))
 
 (defn set-init-template-params!
   [xfrmr params]
@@ -77,7 +77,7 @@
       ; msg-listener (.setMessageListener msg-listener)
       err-listener (.setErrorListener err-listener)
       uri-resolver (.setURIResolver uri-resolver)
-      ssheet-params (.setStylesheetParameters (to-params ssheet-params))
+      ssheet-params (.setStylesheetParameters (sx/to-params ssheet-params))
       init-tmpl-params (set-init-template-params! init-tmpl-params)) xfrmr))
 
 (defn transformer
@@ -85,27 +85,27 @@
   ([ss]
    (transformer (compiler) ss))
   ([compiler ss]
-   (.load30 (.compile compiler (as-source ss)))))
+   (.load30 (.compile compiler (sx/as-source ss)))))
 
 (defn apply-templates
   ([xform input]
    (->> input
-        compile-xml
+        sx/as-source
         (.applyTemplates xform)
-        unwrap-xdm-items))
+        sx/unwrap-xdm-items))
   ([xform input dest]
    (->> input
-        as-source
+        sx/as-source
         (.applyTemplates xform dest))
-   (unwrap-xdm-items (.getXdmNode dest))))
+   (sx/unwrap-xdm-items (.getXdmNode dest))))
 
 (defn call-template
   "Call a named template.  tmpl-name must be the output of the qname function"
   ([xform tmpl-name]
-   (unwrap-xdm-items (.callTemplate xform tmpl-name)))
+   (sx/unwrap-xdm-items (.callTemplate xform tmpl-name)))
   ([xform tmpl-name dest]
    (.callTemplate xform tmpl-name dest)
-   (unwrap-xdm-items (.getXdmNode dest))))
+   (sx/unwrap-xdm-items (.getXdmNode dest))))
 
 (defn chain
   "Combine a collection of XsltTransformer objects into a destination.
