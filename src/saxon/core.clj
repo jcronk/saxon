@@ -7,42 +7,48 @@
 ; remove this notice from this software.
 
 (ns saxon.core
+  "Core functionality for Saxon"
   (:require [clojure.string :as st])
-  (:import (java.io File
-                    InputStream
-                    OutputStream
-                    Reader
-                    StringReader
-                    Writer)
-           (java.net URL
-                     URI)
-           (java.util Map)
-           (javax.xml.transform Source)
-           (javax.xml.transform.stream StreamSource)
-           (net.sf.saxon.lib FeatureKeys
-                             Feature)
-           (net.sf.saxon.s9api Destination
-                               Processor
-                               Serializer
-                               Serializer$Property
-                               XPathCompiler
-                               XdmValue
-                               XdmItem
-                               XdmNode
-                               XdmNodeKind
-                               XdmAtomicValue
-                               XdmMap
-                               XQueryCompiler
-                               QName)
-           (net.sf.saxon.tree.util Navigator)))
+  (:import (java.io
+             File
+             InputStream
+             OutputStream
+             Reader
+             StringReader
+             Writer)
+           (java.net
+             URL
+             URI)
+           java.util.Map
+           javax.xml.transform.Source
+           javax.xml.transform.stream.StreamSource
+           (net.sf.saxon.lib
+             FeatureKeys
+             Feature)
+           (net.sf.saxon.s9api
+             Destination
+             Processor
+             Serializer
+             Serializer$Property
+             XPathCompiler
+             XdmValue
+             XdmItem
+             XdmNode
+             XdmNodeKind
+             XdmAtomicValue
+             XdmMap
+             XQueryCompiler
+             QName)
+           net.sf.saxon.tree.util.Navigator))
 ;;
 ;; Utilities
 ;;
 
 (def ^{:tag Processor}
   proc
-  "Returns the Saxon Processor object, the thread-safe generator class for documents,
-  stylesheets, & XPaths. Creates & defs the Processor if not already created."
+  "Returns the Saxon Processor object, the thread-safe generator class for
+  documents, stylesheets, & XPaths. Creates & defs the Processor if not
+  already created."
   (Processor. true))
 
 (defn- upper-snake-case
@@ -69,8 +75,10 @@
 
 (defprotocol Sourceable
   "Coerce between 'resource-namish' things"
-  (^javax.xml.transform.Source as-source [x] "Coerce argument to a StreamSource")
-  (^net.sf.saxon.s9api.XdmValue as-xdmval [x] "Coerce argument to an XdmValue"))
+  (^javax.xml.transform.Source as-source [_]
+    "Coerce argument to a StreamSource")
+  (^net.sf.saxon.s9api.XdmValue as-xdmval [_]
+    "Coerce argument to an XdmValue"))
 
 (extend-protocol Sourceable
   nil
@@ -112,7 +120,7 @@
                    (XdmMap. ^java.util.Map (reduce-kv reducer {} m)))))
 
 (defn to-params
-  "Convert a map of parameters into the QName/XdmValue map that Saxon is expecting"
+  "Convert a map of parameters into a QName/XdmValue map."
   [params]
   (letfn [(conv-pair
             [[k v]]
@@ -142,7 +150,8 @@
 ;; Well, except this is public -- maybe doesn't need to be
 
 (defn atomic?
-  "Returns true if XdmItem or a subclass (XdmAtomicValue, XdmNode) is an atomic value."
+  "Returns true if XdmItem or a subclass (XdmAtomicValue, XdmNode) is an
+  atomic value."
   [^XdmItem item]
   (.isAtomicValue item))
 
@@ -150,9 +159,9 @@
   "Makes XdmItems Clojure-friendly. A Saxon XdmItem is either an atomic value
   (number, string, URI) or a node.
 
-  This function returns an unwrapped item or a sequence of them, turning XdmAtomicValues
-  into their corresponding Java datatypes (Strings, the numeric types), leaving XdmNodes
-  as nodes."
+  This function returns an unwrapped item or a sequence of them, turning
+  XdmAtomicValues into their corresponding Java datatypes (Strings, the numeric
+  types), leaving XdmNodes as nodes."
   [sel]
   (let [result
           (map #(if (atomic? %) (.getValue ^XdmAtomicValue %) %)
@@ -175,8 +184,11 @@
       (build (xml-source x))))
 
 (defn as-xpath-map
+  "Convert a Map into an XdmMap, including wrapping keys and value
+  in XdmAtomicValue instances."
   [mp]
   (letfn [(reducer [r [k v]]
+            ;; TODO: allow sequences as values
             (assoc r (-> k name XdmAtomicValue.) (XdmAtomicValue. v)))]
     (XdmMap. ^java.util.Map (reduce-kv reducer {} mp))))
 
@@ -212,12 +224,18 @@
         (doto (.load exe)
           (.setContextItem xml))))))
 
-(def compile-xpath (memoize compile-xpath*))
-(def compile-xquery (memoize compile-xquery*))
+(def compile-xpath
+  "Memoized version of compile-xpath*"
+  (memoize compile-xpath*))
+
+(def compile-xquery
+  "Memoized version of compile-xquery*"
+  (memoize compile-xquery*))
 
 (defn query
-  "Run query on node. Arity of two accepts (1) string or compiled query fn & (2) node;
-  arity of three accepts (1) string query, (2) namespace map, & (3) node."
+  "Run query on node. Arity of two accepts (1) string or compiled query
+  fn & (2) node; arity of three accepts (1) string query, (2) namespace
+  map, & (3) node."
   ([q nd] ((if (fn? q) q (compile-xquery q)) nd))
   ([q nses nd] ((compile-xquery q nses) nd)))
 

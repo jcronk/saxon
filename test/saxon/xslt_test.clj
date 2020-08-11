@@ -4,18 +4,16 @@
             [clojure.test :refer :all]
             [saxon.core :as s]
             [saxon.xslt :as xsl])
-  (:import (java.io StringReader
-                    ByteArrayInputStream)
-           (javax.xml.transform Source
-                                ErrorListener
-                                TransformerException
-                                SourceLocator)
-           (net.sf.saxon.s9api XdmNode
-                               XdmDestination
-                               XsltCompiler
-                               MessageListener
-                               XsltExecutable
-                               SaxonApiException)))
+  (:import (javax.xml.transform
+             ErrorListener
+             TransformerException
+             SourceLocator)
+           (net.sf.saxon.s9api
+             XdmNode
+             XdmDestination
+             XsltCompiler
+             MessageListener
+             XsltExecutable)))
 
 (def sample-error-listener
   (binding [*out* *err*]
@@ -32,12 +30,12 @@
   (reify MessageListener
     (^void message [_
                     ^XdmNode content
-                    ^boolean terminate
+                    ^boolean _terminate
                     ^SourceLocator locator]
       (let [rown (.getLineNumber locator)
             coln (.getColumnNumber locator)
             id (.getPublicId locator)
-            sys-id (.getSystemId locator)]
+            _sys-id (.getSystemId locator)]
         (println (str "Message received at row: " rown ", col: "
                       coln "from " id ": " content))))))
 
@@ -61,7 +59,9 @@
       (let [ss (io/resource "test-counter.xsl")
             xf (xsl/transformer compiler ss)
             inp (io/resource "xml-input.xml")]
-        (is (st/includes? (.toString (xsl/apply-templates xf inp)) "<Result>1</Result>")
+        (is (st/includes?
+              (.toString (xsl/apply-templates xf inp))
+              "<Result>1</Result>")
             "successfully used the package"))))
 
   (testing "set static parameters"
@@ -72,17 +72,17 @@
           c (xsl/compiler {:params params})
           ss (io/resource "stylesheet-xml-input.xsl")
           xf (xsl/transformer c ss)
-          inp (io/resource "xml-input.xml")]
-      (let [outp (xsl/apply-templates xf inp)
-            outp-str (.toString outp)]
-        (is (instance? XdmNode outp)
-            "it returns an XdmNode (i.e., it works)")
-        ; the stylesheet has a use-when attribute on the "test" param, so this
-        ; shows it was compiled as expected
-        (is (st/includes? outp-str "String contents")
-            "first static param worked")
-        (is (st/includes? outp-str "A string")
-            "second param worked")))))
+          inp (io/resource "xml-input.xml")
+          outp (xsl/apply-templates xf inp)
+          outp-str (.toString outp)]
+      (is (instance? XdmNode outp)
+          "it returns an XdmNode (i.e., it works)")
+      ; the stylesheet has a use-when attribute on the "test" param, so this
+      ; shows it was compiled as expected
+      (is (st/includes? outp-str "String contents")
+          "first static param worked")
+      (is (st/includes? outp-str "A string")
+          "second param worked"))))
 
 (deftest test-transformer-and-settings
   (let [compiler (xsl/compiler)]
@@ -102,7 +102,9 @@
             ss (io/resource "stylesheet-init-template.xsl")
             xfrm (xsl/transformer compiler ss)]
         (xsl/set-transformer-properties! xfrm params)
-        (is (st/includes? (.callTemplate xfrm (s/qname "main")) "global param"))))
+        (is (st/includes?
+              (.callTemplate xfrm (s/qname "main"))
+              "global param"))))
 
     (testing "Set template params"
       (let [params {:init-template-params {:input "changed" :tunnel false}}
@@ -121,14 +123,16 @@
         chain (xsl/chain ss-list dest)]
     (testing "invocation by apply-templates"
       (.applyTemplates (first ss-list) inp chain)
-      (is (= (.toString (.getXdmNode dest)) "That was a successful test! Hooray!")
+      (is (= (.toString (.getXdmNode dest))
+             "That was a successful test! Hooray!")
           "All five transformations were applied"))
     (testing "invocation by call-template"
       (let [ss (first ss-list)
             params {:init-template-params {:test "I know"}}]
         (xsl/set-transformer-properties! ss params)
         (.callTemplate ss (s/qname "main") chain)
-        (is (= (.toString (.getXdmNode dest)) "I know that it was a successful test! Hooray!")
+        (is (= (.toString (.getXdmNode dest))
+               "I know that it was a successful test! Hooray!")
             (str "It called the template, used the param, then applied the "
                  "remaining four stylesheets"))))))
 
@@ -142,10 +146,8 @@
         {initial :initial-dest
          results :results} (xsl/chain-with-results ss-list dest)]
     (.applyTemplates (first ss-list) inp initial)
-    (is (st/includes? (.toString (.getXdmNode dest))
-                      "That was a successful test! Hooray!")
-        "All four transformations were applied")
-    (let [[a b c] (map #(.toString (.getXdmNode %)) results)]
-      (is (st/includes? a "That is"))
-      (is (st/includes? b "That was"))
-      (is (st/includes? c "successful")))))
+    (let [[a b c d] (map #(.toString (.getXdmNode %)) (conj (vec others) dest))]
+      (is (st/includes? a "That is a test"))
+      (is (st/includes? b "That was a test"))
+      (is (st/includes? c "a successful test"))
+      (is (st/includes? d "Hooray!")))))

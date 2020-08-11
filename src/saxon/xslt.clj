@@ -4,26 +4,26 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as st]
             [saxon.core :as sx])
-  (:import (java.io File InputStream OutputStream Reader StringReader Writer)
-           (java.net URL URI)
-           (javax.xml.transform Source ErrorListener TransformerException)
-           (javax.xml.transform.stream StreamSource)
-           (net.sf.saxon.lib FeatureKeys Feature)
-           (net.sf.saxon.om NodeInfo)
-           (net.sf.saxon.s9api XsltCompiler XsltTransformer Axis Destination Processor Serializer
-                               Serializer$Property XPathCompiler MessageListener XPathSelector
-                               XdmDestination XdmValue XdmItem XdmNode XdmNodeKind TeeDestination
-                               XdmAtomicValue XdmMap XQueryCompiler XQueryEvaluator QName)
-           (net.sf.saxon.tree.util Navigator)))
+  (:import java.net.URI
+           (net.sf.saxon.s9api
+             XsltCompiler
+             MessageListener
+             XdmDestination
+             RawDestination
+             TeeDestination
+             NullDestination)))
 
 ; XsltCompiler manipulation functions
 (defn set-compiler-params!
+  "Set params on the compiler. Setting them here allows them to be used by the
+  stylesheet as static params"
   [^XsltCompiler compiler params]
   (let [pconv (sx/to-params params)]
     (doseq [[qn av] pconv]
       (.setParameter compiler qn av))))
 
 (defn import-packages!
+  "Import `package-list` of .sef files into compiler's package library"
   [^XsltCompiler compiler package-list]
   (doseq [file (map str package-list)]
     (let [pkg-uri (URI. file)
@@ -51,6 +51,8 @@
      :tparams (sx/to-params params)}))
 
 (defn set-init-template-params!
+  "Set params on initial template for xfrmr. For tunnel params,
+  include `:tunnel true` in the params map"
   [xfrmr params]
   (let [{params :tparams
          tunnel :tunnel}
@@ -58,13 +60,10 @@
     (.setInitialTemplateParameters xfrmr params tunnel)))
 
 (defn set-transformer-properties!
-  "Set properties on the compiled and loaded XsltTransfomer30 object
-    msg-listener, err-listener, and uri-resolver: MessageListener, ErrorListener,
-      and URIResolvers, if not using the defaults
-    ssheet-params: Global stylesheet params as a map (currently this will only
-      work with string values)
-    init-template-params: Parameters to be passed into the initial template (as
-      a map); this includes an optional boolean :tunnel param"
+  "Set properties and params on an Xslt30Transformer instance.
+  Properties are :msg-listener, :err-listener, and :uri-resolver
+  Params are :ssheet-params and :init-template-params - these are both
+  maps."
   [xfrmr props]
   (let [{msg-listener :msg-listener
          err-listener :err-listener
@@ -72,7 +71,9 @@
          ssheet-params :ssheet-params
          init-tmpl-params :init-template-params} props]
     ; I don't have a clue why this works and the below doesn't, but okay
-    (when (instance? MessageListener msg-listener) (.setMessageListener xfrmr msg-listener))
+    (when
+      (instance? MessageListener msg-listener)
+      (.setMessageListener xfrmr msg-listener))
     (cond-> xfrmr
       ; msg-listener (.setMessageListener msg-listener)
       err-listener (.setErrorListener err-listener)
@@ -88,6 +89,7 @@
    (.load30 (.compile compiler (sx/as-source ss)))))
 
 (defn apply-templates
+  "Use xform to apply templates to XML input."
   ([xform input]
    (->> input
         sx/as-source
