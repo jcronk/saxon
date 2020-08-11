@@ -109,52 +109,62 @@
    (.callTemplate xform tmpl-name dest)
    (sx/unwrap-xdm-items (.getXdmNode dest))))
 
-(defn chain
-  "Combine a collection of XsltTransformer objects into a destination.
+(defprotocol S9Destinations
+  (unwrap-dest [_dest] "return the underlying value of the Destination"))
+(extend-protocol S9Destinations
+  XdmDestination
+  (unwrap-dest [dest] (.getXdmItem dest))
+  RawDestination
+  (unwrap-dest [dest] (.getXdmValue dest))
+  NullDestination
+  (unwrap-dest [dest] nil))
 
-  This is for scenarios where there is a series of stylesheets, and the output of
-  the first stylesheet needs to go into the output of the second stylesheet, whose
-  output needs to go into the third stylesheet, etc., until you have the final output.
+(defn as-dest
+  "Create a Destination that applies xf before ending at final"
+  [final xf]
+  (.asDocumentDestination xf final))
 
-  Pass in the full set of stylesheets as compiled and loaded transformers, and create
-  a Destination object that will hold the final output.  This function creates the
-  Destination to be passed to the first transformer.  Example:
+(defn dest-reduce
+  "Reduce a collection of transformers into a destination"
+  [xf-coll dest]
+  (reduce as-dest dest (reverse xf-coll)))
 
-  (let [col (map transformer ss-file-list)
-        dest (XdmDestination.)
-        chained (chain col dest)]
-    (.applyTemplates (first col) input-file chained)
-    (.getXdmNode dest))
-"
-  [ss-coll dest]
-  (let [[head & tail] ss-coll]
-    (reduce #(.asDocumentDestination %2 %1) dest (reverse tail))))
+(defn- as-tee-dest
+  [xf final addl]
+  (.asDocumentDestination xf (TeeDestination. final addl)))
 
-(defn- tee-destination
-  [ss dest1 dest2]
-  (.asDocumentDestination ss (TeeDestination. dest1 dest2)))
+(defn- tee-dest-reducer
+  [reduced-dest pair]
+  (let [[xf new-dest] pair]
+    (as-tee-dest xf reduced-dest new-dest)))
 
-(defn chain-with-results
-  "As chain, but returns a map containing the various Destination objects that are needed to
-  get the intermediate results.
+(defn dest-reductions
+  "Reduce a collection of transformers.
+  Returns a sequence where the first item is the reduced destination and the
+  remaining items are destinations holding the intermediate output of each
+  transformer.  The final transformation output will be in `dest`"
+  [xf-coll dest]
+  (let [dests (repeatedly (count xf-coll) #(XdmDestination.))
+        final (as-dest dest (last xf-coll))
+        pairs (reverse (map vector (butlast xf-coll) (next dests)))
+        xform-dest (reduce tee-dest-reducer final pairs)]
+    (cons (TeeDestination. xform-dest (first dests)) (vec dests))))
 
-    :first-dest
-    :results
-
-  (let [col (map transformer ss-file-list)
-        dest (XdmDestination.)
-        { initial-dest :initial-dest
-          results :results } (chain-with-results col dest)]
-    (.applyTemplates (first col) input-file initial-dest)
-    (.getXdmNode dest) ; final result
-    (map #(.getXdmNode) results)) ; seq of intermediate results, in order
-"
-  [ss-coll dest]
-  (let [dests (repeatedly (-> ss-coll count dec) #(XdmDestination.))
-        paired (map vector (butlast ss-coll) dests)
-        [xfm-first dest-first] (first paired)
-        to-reduce (rest paired)
-        final-dest (.asDocumentDestination (last ss-coll) dest)
-        reduction (reduce #(tee-destination (first %2) (last %2) %1) final-dest to-reduce)]
-    {:initial-dest (TeeDestination. dest-first reduction)
-     :results dests}))
+(defn xform-piped
+  "Apply templates to a collection of transformers, getting the final output.
+  3-arity version takes a function to be applied to each intermediate
+  destination."
+  ([xf-coll in]
+   (let [[primary & others] (map transformer xf-coll)
+         dest (XdmDestination.)
+         xform-dest (dest-reduce others dest)]
+     (.applyTemplates primary in xform-dest)
+     (str (.getXdmValue dest))))
+  ([xf-coll in f]
+   (let [[primary & others] xf-coll
+         dest (XdmDestination.)
+         {xform-dest :initial
+          results :results} (dest-reductions others dest)]
+     (.applyTemplates primary in xform-dest)
+     (f results)
+     (str (.getXdmValue dest)))))

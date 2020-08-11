@@ -120,7 +120,7 @@
                      (map #(xsl/transformer compiler %)))
         inp (s/as-source (io/resource "xml-input.xml"))
         dest (XdmDestination.)
-        chain (xsl/chain ss-list dest)]
+        chain (xsl/dest-reduce (next ss-list) dest)]
     (testing "invocation by apply-templates"
       (.applyTemplates (first ss-list) inp chain)
       (is (= (.toString (.getXdmNode dest))
@@ -143,8 +143,8 @@
                      (map #(xsl/transformer compiler %)))
         inp (s/as-source (io/resource "xml-input.xml"))
         dest (XdmDestination.)
-        {initial :initial-dest
-         results :results} (xsl/chain-with-results ss-list dest)]
+        [initial & others :as results]
+          (xsl/dest-reductions (next ss-list) dest)]
     (.applyTemplates (first ss-list) inp initial)
     (let [[a b c d] (map #(.toString (.getXdmNode %)) (conj (vec others) dest))]
       (is (st/includes? a "That is a test"))
