@@ -1,7 +1,7 @@
 (require 'cemerick.pomegranate.aether)
 (cemerick.pomegranate.aether/register-wagon-factory!
   "http" #(org.apache.maven.wagon.providers.http.HttpWagon.))
-(defproject clojure-saxon "0.12.1-SNAPSHOT"
+(defproject clojure-saxon "0.13.0"
   :description "Clojure wrapper for the Saxon XSLT and XQuery processor."
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [net.sf.saxon/SaxonEE "9.9.1.7"]]

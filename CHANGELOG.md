@@ -1,14 +1,26 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="0.13.0"></a>
+## [0.13.0] - 2020-08-11
 ### Code Refactoring
+- Rename/rewrite "chaining" functions
+- Replace xml-source multi with protocol
 - :refer :all with prefix
 - Memoize XPath/Xquery functions, rename
+
+### Features
+- Support clearing static params
+- Add new functions for dealing with packages
 
 ### Features
 - Accept Destination for 3-arg template calls
 
 ### Maintenance
+- Update version & changelog
+- Use Bikeshed default instead of overriding
+- add changelog
 - Update gitignore
 - Reformat and add/improve documentation
 - Update version, update config
@@ -49,7 +61,8 @@
 <a name="0.9.2"></a>
 ## 0.9.2 - 2011-01-04
 
-[Unreleased]: https://github.com/jcronk/saxon/compare/0.12.0...HEAD
+[Unreleased]: https://github.com/jcronk/saxon/compare/0.13.0...HEAD
+[0.13.0]: https://github.com/jcronk/saxon/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/jcronk/saxon/compare/0.9.4...0.12.0
 [0.9.4]: https://github.com/jcronk/saxon/compare/0.9.3...0.9.4
 [0.9.3]: https://github.com/jcronk/saxon/compare/0.9.2...0.9.3
