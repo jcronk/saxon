@@ -127,26 +127,6 @@
             (vector (QName. ^String (name k)) (as-xdmval v)))]
     (into {} (map conv-pair params))))
 
-(defmulti ^Source xml-source class)
-(defmethod xml-source File
-  [f]
-  (StreamSource. ^File f))
-(defmethod xml-source InputStream
-  [i]
-  (StreamSource. ^InputStream i))
-(defmethod xml-source URL
-  [u]
-  (StreamSource. ^InputStream (.openStream ^URL u)))
-(defmethod xml-source Reader
-  [r]
-  (StreamSource. ^Reader r))
-(defmethod xml-source String
-  [s]
-  (StreamSource. (StringReader. ^String s)))
-(defmethod xml-source XdmNode
-  [nd]
-  (.asSource ^XdmNode nd))
-
 ;; Well, except this is public -- maybe doesn't need to be
 
 (defn atomic?
@@ -181,7 +161,7 @@
   {:tag XdmNode}
   [x]
   (.. proc (newDocumentBuilder)
-      (build (xml-source x))))
+      (build (as-source x))))
 
 (defn as-xpath-map
   "Convert a Map into an XdmMap, including wrapping keys and value

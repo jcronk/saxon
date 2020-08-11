@@ -48,7 +48,7 @@
   (testing "Create exe"
     (let [c (xsl/compiler)
           ss (io/resource "stylesheet-xml-input.xsl")
-          ssrc (s/xml-source ss)]
+          ssrc (s/as-source ss)]
       (is (instance? XsltExecutable (.compile c ssrc))
           "It creates an executable")))
 
