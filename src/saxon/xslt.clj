@@ -22,6 +22,16 @@
     (doseq [[qn av] pconv]
       (.setParameter compiler qn av))))
 
+(defn compile-package
+  "Compile an XSLT package into an in-memory representation"
+  [compiler pkg-src]
+  (.compilePackage compiler (sx/as-source pkg-src)))
+
+(defn write-package
+  "Write an in-memory compiled package to a file in SEF format"
+  [pkg file]
+  (.save pkg file))
+
 (defn import-packages!
   "Import `package-list` of .sef files into compiler's package library"
   [^XsltCompiler compiler package-list]
